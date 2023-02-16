@@ -1,4 +1,5 @@
-# Códigos del Taller
+# Códigos del laboratorio 2: "Programación de GPUs y Acleradores con SYCL"
+
 ## Contenidos
 * En este repositorio se encuentran los códigos propuestos en la Práctica 2 de la asignatura de [Programación de GPUs y Aceleradores]()
 * Para poner a punto el taller se recomienda seguir los pasos de la sección [Setup del lab](#setup-del-lab)
