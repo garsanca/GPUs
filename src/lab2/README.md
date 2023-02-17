@@ -1,19 +1,21 @@
-# Códigos del laboratorio 2: "Programación de GPUs y Acleradores con SYCL"
+# Códigos del laboratorio 2: "Programación de GPUs y Aceleradores con SYCL"
 
 ## Contenidos
-* En este repositorio se encuentran los códigos propuestos en la Práctica 2 de la asignatura de [Programación de GPUs y Aceleradores]()
+* En este repositorio se encuentran los códigos propuestos en la Práctica 2 de la asignatura de [Programación de GPUs y Aceleradores](https://github.com/garsanca/GPUs)
 * Para poner a punto el taller se recomienda seguir los pasos de la sección [Setup del lab](#setup-del-lab)
 * Los códigos que vamos a trabajar están disponibles en la [sección "Ejemplos"](#ejemplos), resumidamente trabajan algunos de los aspectos mostrados en la parte teórica:
     * helloWorld: ilustra la selección de dispositivos
     * Memoria Buffer & Accessors: uso de buffers y accesors
     * Memoria USM: uso de USM
     * Suma de vectores: suma de vectores
+    * Optimización en GPUs
     * Multiplicación de matrices
+* Los códigos que se han de entregar están en la [sección "Entrega evaluable"](#entrega-evaluable)
 
 # Setup del lab
 
 ## Transparencias
-* Todo el material está disponible en el repositorio [github](https://github.com/garsanca/FDI_SemanaInformatica23)
+* Todo el material está disponible en el repositorio [github](https://github.com/garsanca/GPUs/tree/main/src/lab2)
     * Puede descargarse fácilmente clonando el repositorio ejecutando en un terminal el comando ```git clone https://github.com/garsanca/GPUs```
 
 ## Laboratorios FDI
@@ -63,7 +65,7 @@ user@host:~/ $ sycl-ls
 
 
 ## Cuenta en DevCloud
-* El [Intel® DevCloud for oneAPI](https://devcloud.intel.com/oneapi/) es un espacio de desarrollo **gratuito** para que la comunidad de desarrolladores puedan programar aplicaciones. Instrucciones para [solicitud de cuenta](transparencias/DevCloud_Setup_New_Users.pdf)
+* El [Intel® DevCloud for oneAPI](https://devcloud.intel.com/oneapi/) es un espacio de desarrollo **gratuito** para que la comunidad de desarrolladores puedan programar aplicaciones
     * Múltiples **hw**: 
         * **CPUs**: desktop *i9-11900* y servidor tipo Xeon diferentes arquitecturas (Skylake,  Ice Lake, Sapphire Rapids)
         * **GPUs**: integradas UHD Intel® Core™ Gen9 y Gen11 
@@ -396,8 +398,186 @@ free(c, Q);
 2. Además se debe de codificar el kernel de suma de vectores dentro del **Q.submit**
 
 
+## Optimización en GPUs
+* Tal y como hemos visto en clase las GPUs de Intel contienen varios niveles de paralelismo:
+    * **Slices**: agrupación de **subslices**
+    * **Subslices**: agrupación de **Execution Units**
+    * **Execution Units**: unidades de ejecución donde se ejecutan las instrucciones de los hilos
+    * **SIMD**: unidades vectoriales 2 por EU
+
+* Ojo cada modelos de GPUs de Intel cambia el número de sub-slices, ect
+
+| Generations        | Threads   | Xe-cores/  | Total   | Total       |
+|                    | per VE/EU | SubSlices  | Threads | Operations  |
+|:------------------:|:---------:|:----------:|:-------:|:-----------:|
+| Gen 9              | 7         |  8         | 168     | 1344(SIMDx8)|
+| Iris Xe Gen11      | 7         |  8         | 448     | 3584(SIMDx8)| 
+| Iris Xe-LP (Gen12) | 7         | 16         | 672     | 5376(SIMDx8)|
+
+![Imagen](figures/intelGPU_arch.png)
+
+### Modelo ejecución
+* Recordar el modelo de ejecución y los niveles de paralelismo existentes en una GPU:
+    * Slices, sub-slices, EUs y SIMD
+
+* En SYCL el paralelismo se puede expresar siguiendo el modelo de ND_Range:
+    * Donde las instancias de ejecución se mapean en **work-items**
+    * Los work-items se pueden agrupar en "sub-groups" y estos a su vez en operaciones vectoriales. Para más información se puede consultar el cuaderno de [Jupyter **04_SYCL_Sub_Groups**](https://github.com/oneapi-src/oneAPI-samples/tree/master/DirectProgramming/C%2B%2BSYCL/Jupyter/oneapi-essentials-training/04_SYCL_Sub_Groups) y probarlo en el dev-cloud
+    * Los work-items (sub-groups) se agrupan en Work-groups
+         * Un work-group se mapea en un **subslice**
+         * Por lo tanto tienen la SLM (Shared Local Memory) compartida
+
+![Imagen](figures/ND_range.png)
+
+* Recuerda que se puede especificar el número de work-groups y work-items a la hora de lanzar el kernel, donde el **global range** corresponde al número total de work-items, el **local range** al número de work-items por work-group
+    * Como los work-items de un mismo work-groups se mapean en un **subslice** tienen acceso a la SLM
+    * Lo que significa poder utilizar funciones de sincronización que se mapean sobre la SLM. Ejemplo ```item.barrier``` que funciona como una barrera a todos los hilos (work-items) hasta que completen operaciones pendientes de memoria (del espacio local o global)
+         * Recuerda que la memoria local es la que se mapea en la SLM
+         * La memoria global es la memoria DRAM de la GPU
+
+``` c
+      cgh.parallel_for(nd_range(sycl::range(64, 64, 128), // global range
+                                sycl::range(1, R, 128)    // local range
+                                ),
+                       [=](sycl::nd_item<3> item) {
+                         // (kernel code)
+                         // Internal synchronization
+                         item.barrier(access::fence_space::global_space);
+                         // (kernel code)
+                       })
+    }
+```
+
+### Hardware Occupancies
+* El concepto de "occupancy" hace referencia a la ocupación de una GPU a nivel de EUs, SIMD.... ect
+* Vamos a evaluar su impacto en el rendimiento final de una aplicación y para ello tomaremos como ejemplo el código de la suma de vectores anteriormente trabajado
+
+* Vamos a proponer un kernel descrito en la función **VectorAdd1** sin especificar el número de work-items por work-groups y que sea el run-time de SYCL el que tome los valores más apropiados. El código correspondiente se encuentra en la [carpeta **optimization_guide/occupancy/**](optimization_guide/occupancy/)
+    * Nota: ejemplos [extraidos de la guía de optimización de GPU](https://www.intel.com/content/www/us/en/develop/documentation/oneapi-gpu-optimization-guide/top/thread-mapping.html)
+
+``` c
+	// Create a kernel to perform c=a+b
+	Q.submit([&](handler &h) { 
+		// Submit the kernel
+		h.parallel_for(N, [=](id<1> i) {
+			for (int it = 0; it < iter; it++)
+				c[i] = a[i] + b[i];
+		});
+	}).wait();       // End of the queue commands we waint on the event reported.
+}
+```
+
+* Al igual que en ejemplos anteriores existe un fichero **Makefile** para facilitar la compilación
+
+* Con el fin de controlar el "occupancy" se propone otro kernel basado en el modelo ND_Range. La función **VectorAdd2** implementa la suma de vectores que tiene como entrada el número de work-groups con el parámetro *num_groups*.
+    * Fijando el número de work-items en un work-group a 256, ...
+    * un número bajo de *num_groups* conllevará que los sub-slices ocupados sean bajos y por lo tanto el occupancy bajo
+
+```c
+	size_t wg_size = 256;
+	int iters = N/num_groups/wg_size;
+
+	Q.submit([&](handler &h) {
+		range global = range<1>(num_groups * wg_size);
+		range local = range<1>(wg_size);
+		h.parallel_for(nd_range<1>(global, local),[=](nd_item<1> index)
+			 [[intel::reqd_sub_group_size(32)]] {
+			size_t grp_id = index.get_group()[0];
+			size_t loc_id = index.get_local_id();
+			size_t start = (grp_id*wg_size*iters+loc_id);
+			size_t end = start + iters*wg_size;
+
+			for (int it = 0; it < iter; it++)
+				for (size_t i = start; i < end; i+=wg_size) {
+					c[i] = a[i] + b[i];
+				}
+		}); 	// End of the kernel function
+	}).wait();
+```
+
+* Se puede verificar con el ejemplo **vector_add.cpp** estos aspectos.
+
+```bash
+user@host:~/ $ ./exec 51200000
+Running on Intel(R) UHD Graphics 620 [0x5917]
+Time VectorAdd1=7061962127 usecs
+Time VectorAdd2=8620146940 usecs (num work_groups=1)
+Time VectorAdd2=4394150106 usecs (num work_groups=2)
+Time VectorAdd2=2514177313 usecs (num work_groups=4)
+Time VectorAdd2=2736493505 usecs (num work_groups=8)
+Time VectorAdd2=2951150889 usecs (num work_groups=16)
+Time VectorAdd2=2908992654 usecs (num work_groups=32)
+```
+
+### Evaluación mediante profiling con VTune
+* La herramienta [Intel VTune](https://www.intel.com/content/www/us/en/develop/documentation/vtune-help/top/analyze-performance/accelerators-group/gpu-compute-media-hotspots-analysis.html) permite realizar un perfilado de una aplicación
+     * Herramienta para optimizar el rendimiento de las aplicaciones, el rendimiento del sistema y la configuración del sistema para HPC, nube, IoT, almacenamiento...
+     * Análisis de CPU, GPU y FPGA
+     * Multi-lenguaje soportado: SYCL, C, C++, C#, Fortran, OpenCL, Python, Google Go, Java, .NET, ensamblador o cualquier combinación de lenguajes
+     * A varios niveles: sistema y/o aplicación
+
+* Análisis **GPU Offload** determina el uso de la GPU
+    * Más [info en la guía de uso](https://www.intel.com/content/www/us/en/develop/documentation/oneapi-gpu-optimization-guide/top/tools/vtune.html)
+
+    * Métricas de ancho de banda con los diferentes niveles de la jerarquía de memoria
+    * Perfilado de hilo de ejecución
+    * Detalle del código y tiempo de ejecución de las tareas (CPU-GPU)
+![Imagen](figures/vtune-gpu.png)
+
+
+* El análisis [**GPU Compute/Media Hotspots Analysis**](https://www.intel.com/content/www/us/en/develop/documentation/vtune-help/top/analyze-performance/accelerators-group/gpu-compute-media-hotspots-analysis.html), muestra un resumen de aspecto relevantes como 
+    * Tiempo de uso de la GPU
+    * Occupancy
+    * Pico del ocupancy esperado
+
+![Imagen](figures/vtune-gpu_gpuHotspots.png)
+
+### Ocupancy evaluada del vector_add
+* Tras el análisis se obtiene el siguiente gráfico
+
+![Imagen](figures/vtune_GPU_hotspots_vectorAdd.png)
+
+* Existe una [herramienta que permite calcular el "occupancy" de la GPU](https://oneapi-src.github.io/oneAPI-samples/Tools/GPU-Occupancy-Calculator/) según su arquitectura y el número de work-items/work-groups
+
+### Acceso a memoria global eficiente
+* El acceso a memoria global tiene un impacto muy severo en el rendimiento de una aplicación
+    * Un acceso *coalescente* o consecutivo en memoria facilita el empaquetado de datos en vectores SIMD y su procesado
+* Para poner en valor este concepto tomaremos el ejemplo de suma de matrices que se encuentra en el directorio (**optimization_guide/global_memory/**](optimization_guide/global_memory/)
+    * La suma de matrices se puede realizar por filas o por columnas como la figura
+
+![Imagen](figures/AoS_vs_SoA.png)
+
+* En el ejemplo a continuación se propone al alumno evaluar el impacto de acceder a las matrices $a$, $b$ y $c$ por filas o columnas
+
+```c
+// Create a kernel to perform c=a+b
+Q.submit([&](handler &h) { 
+	// Submit the kernel
+	h.parallel_for(range<2>(N, N), [=](id<2> item) {
+		auto i = item[0];
+		auto j = item[1];
+		for (int it = 0; it < iter; it++)
+			c[?*N+?] = a[?*N+?] + b[?*N+?];
+	});
+}).wait();
+```
+
+#### ToDo
+* Se recomienda utilizar la herramienta VTune para ver el impacto de las implementaciones y consultar la métrica **GPU Memory Bandwidth** para refrendar la solución más adecuada
+
+### Uso de la jerarquía de memoria eficiente
+* En una GPU suele haber varios niveles de memoria:
+    * Global o DRAM
+    * Local o en la arquitectura Intel denominada SLM
+    * Privada o registros
+
+![Imagen](figures/memory-hierarchy-OpenCL.png)
+
+* Los tiempos de acceso son inversamente proporcionales a la propia jerarquía por lo que su explotación es muy eficiente
+     * El ejemplo de la *Multiplicación de Matrices con memoria Local* propuesto en el ejercicio siguiente pone en evidencia este aspecto
+
 ## Multiplicación de matrices
-* El [código]()  de matrices $C_{NM}=A_{NK}*B_{KM}$
+* El [código](matrix_mult/)  de matrices $C_{NM}=A_{NK}*B_{KM}$
     * Para este ejemplo por sencillez $N=M=K=n$
 
 ### ToDo
@@ -407,7 +587,7 @@ free(c, Q);
 * **Local**: Uso de memoria *local*
     * Rutina ```matrix_mult_local```
 
-
+# Entrega evaluable
 
 ## Tratamiento de imágenes
 * El siguiente ejemplo ilustra la **reducción de Ruido en una imagen (sal y pimienta)**
@@ -437,3 +617,45 @@ free(c, Q);
      * La imagen de salida se escribe en **image_out**
      * La selección de la cola se realiza en el fichero [**main.cpp**](image_salt_pepper/main.cpp) y la memoria para la imagen de entrada y salida se reserva mediante el mecanismo de USM
 
+## N-Body
+* En física se usa para resolver problema de la predicción de los movimientos individuales de un grupo de objetos celestes que interactúan entre sí gravitacionalmente
+* El código se encuentra disponible en el [directorio **nbody**](nbody/)
+
+
+### Cálculo de fuerzas gravitatorias
+$F_{i,j} = m_i \frac{\partial^2 q_i}{\partial^2 t}$
+
+$F_{i,j} = \frac{G m_i m_j \left( {q_j-q_i} \right)}{\left\| q_j-q_i  \right \| ^3}$
+
+$m_i \frac{\partial^2 q_i}{\partial^2 t} = \sum_{j=0,i \neq j}^{N}{\frac{G m_i m_j \left( {q_j-q_i} \right)} {\left\| q_j-q_i  \right \| ^3}} = \frac{\partial U}{\partial q_i}$
+
+* En el fichero **GSimulation.cpp** está el bucle principal en la función **start()**
+    * Funciones principales **get_forces** y **updateParticles**
+
+```c
+void GSimulation :: start() 
+{
+  ...
+  const double t0 = time.start();
+  for (int s=1; s<=get_nsteps(); ++s)
+  {   
+   ts0 += time.start(); 
+
+    get_forces(n);
+
+    energy = updateParticles(n, dt);
+    _kenergy = 0.5 * energy; 
+    
+    ts1 += time.stop();
+
+    ....
+
+    }
+  } //end of the time step loop
+```
+
+### ToDo
+* Se recomienda paralelizar mediante SYCL las funciones **updateParticles** y **get_acceleration** del [fichero](nbody/GSimulation.cpp)
+* Evaluar si el esquema utilizado de memoria AoS es el más adecuado para la explotación de paralelismo en una GPU
+* El cálculo de la variable **energy** en la rutina *updateParticles* es una reducción que no es la operación más eficiente en una GPU
+     * Con el fin de implementar una reducción eficiente en SYCL se propone seguir alguna de la implementaciones descritas [en "Analyzing the Performance of Reduction Operations in Data Parallel C++"](https://www.intel.com/content/www/us/en/developer/articles/technical/analyzing-performance-reduction-operations-dpc.html#gs.pplz86) cuyo código se encuentra en un [repositorio GitHub](https://github.com/rvperi/DPCPP-Reduction.)
