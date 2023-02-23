@@ -407,7 +407,7 @@ free(c, Q);
 
 * Ojo cada modelos de GPUs de Intel cambia el número de sub-slices, ect
 
-| Generations        | Threads   | Xe-cores/  | Total   | Total       |
+| Generations        | Threads   | Xe-cores   | Total   | Total       |
 |                    | per VE/EU | SubSlices  | Threads | Operations  |
 |:------------------:|:---------:|:----------:|:-------:|:-----------:|
 | Gen 9              | 7         |  8         | 168     | 1344(SIMDx8)|
@@ -531,6 +531,11 @@ Time VectorAdd2=2908992654 usecs (num work_groups=32)
     * Pico del ocupancy esperado
 
 ![Imagen](figures/vtune-gpu_gpuHotspots.png)
+
+### Recolección de traza online
+* Para hacerlo por línea de comandos es puede utilizar:
+    1. Recolección: ```vtune -collect gpu-hotspots  -result-dir vtune-data -- <exec_name>
+    2. Visualización: ```vtune -report summary -result-dir vtune-data -format html -report-output summary.html```
 
 ### Ocupancy evaluada del vector_add
 * Tras el análisis se obtiene el siguiente gráfico
