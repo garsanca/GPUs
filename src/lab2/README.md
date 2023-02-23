@@ -534,7 +534,7 @@ Time VectorAdd2=2908992654 usecs (num work_groups=32)
 
 ### Recolección de traza online
 * Para hacerlo por línea de comandos es puede utilizar:
-    1. Recolección: ```vtune -collect gpu-hotspots  -result-dir vtune-data -- <exec_name>
+    1. Recolección: ```vtune -collect gpu-hotspots  -result-dir vtune-data -- <exec_name>```
     2. Visualización: ```vtune -report summary -result-dir vtune-data -format html -report-output summary.html```
 
 ### Ocupancy evaluada del vector_add
