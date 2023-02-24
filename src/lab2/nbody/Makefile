@@ -2,6 +2,7 @@ CXX = dpcpp
 COMPFLAGS = -g -std=c++11 
 OPTFLAGS = -O2
 INCLUDES = 
+LIBS=-L/usr/lib/gcc/x86_64-linux-gnu/11
 
 
 CXXFLAGS = $(COMPFLAGS) $(OPTFLAGS) 
@@ -26,7 +27,7 @@ all: clean cpu
 cpu: $(OBJSC)
 	$(info )
 	$(info Linking the CPU executable:)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(EXEC) $(OBJSC)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(EXEC) $(OBJSC) $(LIBS)
 	
 run: 
 	$(info )
