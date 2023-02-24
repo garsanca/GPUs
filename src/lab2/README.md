@@ -534,8 +534,10 @@ Time VectorAdd2=2908992654 usecs (num work_groups=32)
 
 ### Recolección de traza online
 * Para hacerlo por línea de comandos es puede utilizar:
-    1. Recolección: ```vtune -collect gpu-hotspots  -result-dir vtune-data -- <exec_name>```
-    2. Visualización: ```vtune -report summary -result-dir vtune-data -format html -report-output summary.html```
+    1. Recolección: ```vtune -collect gpu-hotspots  -result-dir vtune-data -- <exec_name>```, recolecta la traza en el directorio vtune-data para un análisis que evalua los kernels que se ejecutan en la GPU
+    2. Recolección: ```vtune -collect gpu-offload  -result-dir vtune-data-offload -- <exec_name>```, recolecta el uso (utilización) de la GPU
+    3. Visualización: ```vtune -report summary -result-dir vtune-data -format html -report-output summary.html```
+           * También se puede recolectar en un fichero tipo .csv para su posterior análisis: ```vtune -report summary -result-dir vtune-data -format csv -report-output summary.csv```
 
 ### Ocupancy evaluada del vector_add
 * Tras el análisis se obtiene el siguiente gráfico
@@ -567,8 +569,16 @@ Q.submit([&](handler &h) {
 }).wait();
 ```
 
+### VTune
+* Evaluación con la herramienta de perfilado de Vtune para la **latencia de memoria**
+     1. Recolectar la traza con: ```vtune -c gpu-hotspots -knob profiling-mode=source-analysis -knob source-analysis=mem-latency -result-dir vtune-data -- ./exec 8192```
+     2. Visualizar el uso de memoria: ```vtune -report summary -result-dir vtune-data -format html -report-output summary.html```
+     3. El fichero [summary.html](figures/summary_Mem.html) se puede consultar con un navegador cualquiera
+
 #### ToDo
 * Se recomienda utilizar la herramienta VTune para ver el impacto de las implementaciones y consultar la métrica **GPU Memory Bandwidth** para refrendar la solución más adecuada
+
+
 
 ### Uso de la jerarquía de memoria eficiente
 * En una GPU suele haber varios niveles de memoria:
