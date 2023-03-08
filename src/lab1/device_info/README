@@ -1,0 +1,8 @@
+Información del dispositivo disponible. Ver http://en.wikipedia.org/wiki/CUDA
+
+CUDA SDK en /usr/local/cuda
+
+Compilación:
+>> nvcc device_info.cu
+Ejecución
+>> ./a.out

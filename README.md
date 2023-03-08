@@ -2,6 +2,7 @@
 
 ## Práctica 1: Programación de GPUs con CUDA
 * Las instrucciones y códigos del [laboratorio 1](src/lab1/README.md)
+
 ![Imagen](figures/Nvidia_CUDA_Logo.jpg)
 
 

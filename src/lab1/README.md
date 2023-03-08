@@ -74,7 +74,7 @@ model : 151
 model name : 12th Gen Intel(R) Core(TM) i7-12700
 stepping : 2
 microcode : 0x25
-cpu MHz : 2100.000
+cpu MHz : 2100.000![Imagen](figures/discrete_shaders_archicture.png)
 cache size : 25600 KB
 physical id : 0
 siblings : 20
@@ -91,4 +91,172 @@ bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
 bogomips : 4224.00
 clflush size : 64
 ```
+
+# Ejemplos para trabajar
+* En este repositorio se encuentran los códigos para que el alumnado conozca las principales caracteristicas de programación de GPUs con el modelo de CUDA
+* Antes de nada vamos a conocer las características de la GPU con que trabajaremos en el laboratorio mediante el [código **device_info**](device_info/device_info.cu)
+    * Para compilar vamos a utilizar el compilador [NVIDIA CUDA Compiler Driver NVCC **nvcc**](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/)
+    * En el fichero [README](device_info/README) muestra la información para compilar el código anterior: ```nvcc device_info.cu``` que generará el ejecutable **a.out**
+
+
+## Suma matrices
+* Partiendo el código siguiente que muestra el esquema de codificación de la suma de vectores en una CPU
+
+``` c
+// Compute vector sum C = A+B
+void vecAdd(float* A, float* B, float* C,
+   int n)
+{
+   for (i = 0, i < n, i++)
+      C[i] = A[i] + B[i];
+}
+
+int main()
+{
+   // Memory allocation for A_h, B_h, C_h
+   // I/O to read A_h and B_h, N elements
+   ...
+   vecAdd(A_h, B_h, C_h, N);
+}
+```
+
+* Podemos adaptar esa misma idea para a un código CUDA con la construcción del kernel **vecAddkernel**
+
+```c
+// Compute vector sum C = A+B
+__global__
+void vecAddkernel(float* A_d, float* B_d, float* C_d, int n)
+{
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+    if(i<n) C_d[i] = A_d[i] + B_d[i];
+}
+
+int main()
+{
+   float* A_d, B_d, C_d;
+   int size = n* sizeof(float); 
+
+   // Get device memory for A, B, C
+   // copy A and B to device memory
+   cudaMalloc((void **) &A_d, size);
+   cudaMemcpy(A_d, A, size, cudaMemcpyHostToDevice);
+   cudaMalloc((void **) &B_d, size);
+   cudaMemcpy(B_d, B, size, cudaMemcpyHostToDevice);
+   cudaMalloc((void **) &C_d, size);
+    
+   // Kernel execution in device
+   // (vector add in device)
+   vecAddkernel<<<nBlocks, nThread_per_Blocks>>>(A_d, B_d, C_d, n);
+
+   // copy C from device memory
+   cudaMemcpy(C, C_d, size, cudaMemcpyDeviceToHost);
+   // free A, B, C
+   cudaFree(A_d); cudaFree(B_d); cudaFree (C_d);
+}
+```
+
+* En el [código de suma de matrices](matrix_add/main.cu) implementa un esqueleto para la suma de matrices. La función **addMatrix** que se presenta a continuación realiza la suma de matrices **b** y **c** en la CPU. Para compilar dicho código se empleará el compilador **nvcc** como en el ejemplo anterior
+
+```c
+void addMatrix(float *a, float *b, float *c, int N)
+{
+	int i, j, idx;
+	for (i=0; i<N; i++)
+		for(j=0; j<N;j++){
+			idx = i*N+j;
+			a[idx]=b[idx]+c[idx];
+		}
+}
+```
+
+* En este ejemplo se pide que el alumnado complete el [código](matrix_add/main.cu), prestando especial atención a:
+    1. La reserva de memoria con **cudaMalloc(...)** donde se ha de especificar el tamaño a reservar
+    2. La copia de memoria desde el *host* al *device* con las instrucciones **cudaMemcpy(...)**
+    3. Indicar el número de bloques e hilos (**dim3 dimBlock(...,...);** y **dim3 dimGrid(...,...)**) de bloques para el kernel ```addMatrixGPU<<<dimGrid,dimBlock>>>(a_GPU, b_GPU, c_GPU, N);```
+    4. Rellenar el kernel **addMatrixGPU** que aparece a continuación
+    5. Liberar la memoria de la GPU con las instrucciones **cudaFree(...);**
+
+```c
+__global__ void addMatrixGPU(float *a, float *b, float *c, int N )
+{
+	....
+}
+```
+
+## Multiplicación de matrices
+* En este ejemplo vamos a trabajar la multiplicación de matrices descrita como $C_{NM}=A_{NK}*B_{KM}$
+    * El código se encuentra en el directorio [**matrix_mult**](matrix_mult/)
+```c
+   for (i = 0; i < N; i++) {
+      for (j = 0; j < M; j++) {
+         for (k = 0; k < K; k++) {
+            C[i][j] += A[i][k]*B[k][j];
+        }
+      }
+   }
+```
+
+    * El fichero [**main.c**](matrix_mult/main.c) lanza la ejecución en la GPU en **Mul(A, B, hA, wA, wB, C);** que se encuentra en el fichero [**matrix_mult.cu**](matrix_mult/matrix_mul.cu)
+    * El kernel hay que rellenarlo puesto que está vacío
+
+```c
+__global__ void Muld(float* A, float* B, int wA, int wB, float* C)
+{
+	//To Do
+}
+```
+
+![Imagen](figures/cuda-matrix-multiplication-with-shared-memory.png)
+
+### To Do
+* Rellenar el kernel **Muld** del fichero [**matrix_mult.cu**](matrix_mult/matrix_mul.cu)
+    * Se puede comenzar con una implementación 1D
+    * Para continuar con la implementación 2D que es la que aparece en el fichero [**matrix_mult.cu**](matrix_mult/matrix_mul.cu)
+
+### Implementación con memoria compartida
+* Muchos threads
+    * Un Thread por cada Elemento de C[i][j]
+    * Cada Thread necesita Fila A[i][:] y Columna B[:][j]
+* Podemos Usar Memoria Compartida
+    * Cada Block Recorre Filas A[-][:] y Columnas B[:][-]
+    * Hay Localidad a nivel de CUDA Block!!
+
+
+
+![Imagen](figures/cuda-matrix-multiplication.png)
+
+### Implementación mediante librerías
+* Haremos uso de la librerías CUBLAS
+    * BLAS (Basic Linear Algebra Subroutine)
+    * CUBLAS = CUDA + BLAS
+    * Operación GEMM:
+        * C = $\alpha$ op ( A ) op ( B ) + $\beta$ C
+        * $\alpha$ y $\beta$ son escalares
+        * $A_{m \times k}$, $B_{k \times n}$ y $C_{n \times n}$ en (column-major)
+
+```
+cublasStatus_t cublasSgemm(cublasHandle_t handle,
+    cublasOperation_t transa, cublasOperation_t transb,
+    int m, int n, int k,
+    const float           *alpha,
+    const float           *A, int lda,
+    const float           *B, int ldb,
+    const float           *beta,
+    float                 *C, int ldc)
+```
+
+* mulMat $\rightleftharpoons$ cublasSgemm
+    * Sustitución de invocación a **Muld** por cublasSgemm
+    * A tener en cuenta
+        * column-major vs. row-major
+        * $A*B = (B^T*A^T)^T$
+
+![Imagen](figures/rowcolumnarrays.jpg)
+
+### ToDo
+* Comparativa de tiempos de ejecución (GPU-CPU) para la multiplicación de matrices
+    * A[4096][1024]*B[1024][2048]
+    * A[1024][1024] *B[1024][1024]
+    * A[8192][512] *B[512][4096]
+
 
