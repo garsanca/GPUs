@@ -1,13 +1,13 @@
 CXX = g++
-CC = gcc
+CC = g++
 NVCC = nvcc
 
-CFLAGS=-O3 -I. 
-CXXFLAGS=-O3 -I.
+CFLAGS=-O0 -I. -I/usr/local/cuda/include 
+CXXFLAGS=-O0 -I. -I/usr/local/cuda/include
 
-LIBS = -lm
+LIBS = -lm -lcuda -lcudart
 
-SRC =  matrix_mul.o main.o
+SRC =  main.o matrix_mul.o
 	
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -18,8 +18,8 @@ SRC =  matrix_mul.o main.o
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-image: $(SRC) 
-	$(CXX) -o matrix_mult  $(SRC) $(CXXFLAGS) $(LIBS) 
+matrix_mul: $(SRC) 
+	$(CC) -o matrix_mult  $(SRC) $(CXXFLAGS) $(LIBS) 
 
 clean:
 	rm -f *.o matrix_mult

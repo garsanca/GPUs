@@ -1,9 +1,8 @@
 #include <stdio.h>
-#include "matrix_mul.h"
 #include <malloc.h>
 #include <stdlib.h>
 #include <math.h>
-
+#include "matrix_mul.h"
 
 void init_matrix(float *M, int hM, int wM, float k)
 {
@@ -96,7 +95,7 @@ int main(int argc, char** argv)
 	}
 
 
-	Mul(A, B, hA, wA, wB, C);
+	Mul___(A, B, hA, wA, wB, C);
 	//printf("\n\nMATRIX A\n");print_matrix(A, hA, wA);
 	//printf("\n\nMATRIX B\n");print_matrix(B, hB, wB);
 	//printf("\n\nMATRIX C\n");print_matrix(C, hA, wB);
