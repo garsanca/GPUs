@@ -2,8 +2,8 @@ CXX = g++
 CC = g++
 NVCC = nvcc
 
-CFLAGS=-O0 -I. -I/usr/local/cuda/include 
-CXXFLAGS=-O0 -I. -I/usr/local/cuda/include
+CFLAGS=-O3 -I. -I/usr/local/cuda/include 
+CXXFLAGS=-O3 -I. -I/usr/local/cuda/include
 
 LIBS = -lm -lcuda -lcudart
 
