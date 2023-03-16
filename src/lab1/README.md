@@ -353,7 +353,7 @@ Time(%)      Time     Calls       Avg       Min       Max  Name
 
 ![Imagen](figures/mem_transpose2.png)
 
-![Imagen](figures/mem_miscoalesced.pdf)
+![Imagen](figures/mem_miscoalesced.png)
 
 * Versión v3 de la transposición de matrices: **shared-memory**
     * Más rápida en comparación con la memoria global
