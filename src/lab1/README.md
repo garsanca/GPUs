@@ -49,18 +49,14 @@ Fri Feb 17 16:02:47 2023
 
 
 ### nvcc
-\begin{console}{Terminal \#1}
-\tiny
-\begin{verbatim}
+``` bash
 usuario_local@profess11:~$ nvcc -V
 nvcc: NVIDIA (R) Cuda compiler driver
 Copyright (c) 2005-2020 NVIDIA Corporation
 Built on Wed_Jul_22_19:09:09_PDT_2020
 Cuda compilation tools, release 11.0, V11.0.221
 Build cuda_11.0_bu.TC445_37.28845127_0
-\end{verbatim}
-\end{console} 
-
+```
 
 * Procesador Intel i7-8700 con 6 cores + SMT
 
@@ -259,4 +255,143 @@ cublasStatus_t cublasSgemm(cublasHandle_t handle,
     * A[1024][1024] *B[1024][1024]
     * A[8192][512] *B[512][4096]
 
+## Transposición de matrices
+* Transposición de Matrices en el [directorio](matrix_transpose/) 
+    * Empleada en multitud de algoritmos: FFT
+    * PROBLEMA: Accesos a memoria no eficientes en GPU
+
+### Versión CPU
+* Codigo disponible en el [directorio matrix_transpose/CPU](matrix_transpose/CPU/transpose.c) 
+    * Compilación mediante fichero [Makefile](matrix_transpose/CPU/Makefile): *gcc -o exec source.c -fopenmp*
+    * Explotación de paralelismo a nivel de thread: OpenMP
+
+
+| Version      | Cores | Rendimiento | 
+|:------------:|-------|-------------|
+|   1D         | ¿?    | 380 MB/s    |
+|   2D         | 1     | 365 MB/s    |
+|              | 2     | 696 MB/s    |
+|              | 4     | 859 MB/s    | 
+
+## Versión GPU
+* ToDo: versión 1D
+* Versión 2D: problema accesos a memoria 
+
+```c
+__global__ void transpose_device(float *in, float *out, int rows, int cols) 
+{ 
+   int i, j; 
+   i = ??
+   j = ??
+
+   if (i<?? && j<??)
+      out [ i * rows + j ] = in [ j * cols + i ]; 
+}
+```
+
+* Rendimiento alcanzado en una GTX980
+
+| **CPU** | **CPU 4ths** | **CUDA 1D**    | **CUDA 2D**  |
+|:-------:|:------------:|:--------------:|:------------:|
+| 380MB/s |   859MB/s    | 1219 MB/s      |  2014 MB/s   | 
+
+### Profiling
+* CUDA profiler: **nvprof**
+
+```bash
+carlos@7picos: $ nvprof ./transpose
+./exec n (by default n=4096)
+Transpose version 1D: 381.636146 MB/s
+==29936== NVPROF is profiling process 29936, command: ./transpose
+Transpose kernel version: 4950.878007 MB/s
+==29936== Profiling application: ./transpose
+==29936== Profiling result:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 47.10%  10.468ms         1  10.468ms  10.468ms  10.468ms  [CUDA memcpy DtoH]
+ 42.61%  9.4681ms         1  9.4681ms  9.4681ms  9.4681ms  [CUDA memcpy HtoD]
+ 10.29%  2.2867ms         1  2.2867ms  2.2867ms  2.2867ms  transpose_device(float*, float*, int, int)
+
+==29936== API calls:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 85.07%  130.76ms         2  65.381ms  360.05us  130.40ms  cudaMalloc
+ 14.57%  22.390ms         2  11.195ms  9.5133ms  12.877ms  cudaMemcpy
+  0.24%  370.00us        91  4.0650us     122ns  193.84us  cuDeviceGetAttribute
+  0.07%  108.08us         1  108.08us  108.08us  108.08us  cuDeviceTotalMem
+  0.02%  33.740us         1  33.740us  33.740us  33.740us  cudaLaunch
+  0.02%  28.259us         1  28.259us  28.259us  28.259us  cuDeviceGetName
+  0.00%  5.4260us         1  5.4260us  5.4260us  5.4260us  cudaThreadSynchronize
+  0.00%  5.2270us         4  1.3060us     147ns  4.3870us  cudaSetupArgument
+  0.00%  1.9540us         1  1.9540us  1.9540us  1.9540us  cudaConfigureCall
+  0.00%  1.5640us         3     521ns     124ns  1.2540us  cuDeviceGetCount
+  0.00%     853ns         3     284ns     122ns     487ns  cuDeviceGet
+```
+
+
+* CUDA profiler: **nvvp**
+    * Aplicación gráfica con mayor precisión
+* Para mayor detalle consultar la opción **Profile Nsight Compute**
+* Versión v1 de la transposición de matrices: *Achieved Occupancy 27,25%*
+
+
+![Imagen](figures/nvvp_utilization_v1.png)
+
+* **Profile in NVIDIA Nsight Compute**: versión v2 de la transposición de matrices: *Occupancy 59.31%*
+
+![Imagen](figures/CUDAv2.png)
+
+
+* Sin embargo el **SOL SM [%] es del 5,70**, quiere decir que el Speed of Light (SOL) solamente es el 5,7% del máximo
+* **¿A qué es debido?**
+     * En el apartado *Warp State (All cycles) da una idea de la razón*
+     * Consultar la tabla *Table 6. Warp Scheduler States* del [manual Nsight](https://docs.nvidia.com/nsight-compute/NsightCompute/index.html\#profiler-report-summary-page)
+    * *Stall Drain*: Warp was stalled after EXIT waiting for all memory instructions to complete
+    * *Stall long Scoreboard*: Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, tex) operation. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture
+
+![Imagen](figures/CUDAv2_WarpScheduleStates.png)
+
+* Versión v2 de la transposición de matrices: **Accesos alineados/desalineados**
+
+![Imagen](figures/mem_transpose2.png)
+
+![Imagen](figures/mem_miscoalesced.pdf)
+
+* Versión v3 de la transposición de matrices: **shared-memory**
+    * Más rápida en comparación con la memoria global
+    * Baja latencia
+    * Alto Ancho de banda
+* Load: Copia de un bloque a Global $\Rightarrow$ memoria compartida
+* Store: Copia de un memoria compartida $\Rightarrow$ mem Global
+
+### Optimización de memoria Global
+* Versión v3 de la transposición de matrices: **shared-memory**
+
+```c
+#define TILE_DIM 16
+
+__global__ void transpose_device(float *in, float *out, int rows, int cols)
+{ 
+   int i, j; 
+   __shared__ float tile [ TILE_DIM ] [ TILE_DIM ]; 
+
+   i = blockIdx.x * blockDim.x + threadIdx.x; 
+   j = blockIdx.y * blockDim.y + threadIdx.y; 
+
+   if (i<rows && j<cols) {
+      tile[?] [?]...
+      __syncthreads(); 
+      i = ? ;
+      j = ? ;
+      out[ i * rows + j ] ...
+   }
+}
+```
+
+* Rendimiento alcanzado en una GTX980
+
+| **CPU** | **CPU 4ths** | **CUDA 1D**    | **CUDA 2D**  | **CUDA 2D + Shared** | 
+|:-------:|:------------:|:--------------:|:------------:|:--------------------:|
+| 380MB/s |   859MB/s    | 1219 MB/s      |  2014 MB/s   | 5213 MB/s            | 
+
+* Versión v3 de la transposición de matrices: **shared-memory**
+    * Consultar **Shared Memory** con **Bank Conflicts** 
 
