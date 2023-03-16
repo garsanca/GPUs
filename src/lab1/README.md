@@ -395,3 +395,32 @@ __global__ void transpose_device(float *in, float *out, int rows, int cols)
 * Versión v3 de la transposición de matrices: **shared-memory**
     * Consultar **Shared Memory** con **Bank Conflicts** 
 
+### Optimización memoria compartida   
+* Versión v4 de la transposición de matrices: **sin conflicto en shared**
+
+```c
+#define TILE_DIM 16
+
+__global__ void transpose_device(float *in, float *out, int rows, int cols)
+{ 
+   int i, j; 
+   __shared__ float tile [ TILE_DIM ] [ TILE_DIM+1 ]; 
+
+   i = blockIdx.x * blockDim.x + threadIdx.x; 
+   j = blockIdx.y * blockDim.y + threadIdx.y; 
+
+   if (i<rows && j<cols) {
+      tile[?] [?]...
+      __syncthreads(); 
+      i = ? ;
+      j = ? ;
+      out[ i * rows + j ] ...
+   }
+}
+```
+
+* Versión v4 de la transposición de matrices: **sin conflicto en shared**
+
+![imagen](figures/CUDAv4.png)
+
+
