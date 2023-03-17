@@ -1,4 +1,16 @@
 # Códigos del laboratorio 1: "Programación de GPUs con CUDA"
+## Contenidos
+* En este repositorio se encuentran los códigos propuestos en la Práctica 1 de la asignatura de [Programación de GPUs y Aceleradores](https://github.com/garsanca/GPUs)
+* El equipo del laboratorio tiene todo el sw instalado para poder desarrollar, compilar y ejecutar un código en CUDA
+* Los códigos que vamos a trabajar están disponibles en la [sección "Ejemplos"](#ejemplos), resumidamente trabajan algunos de los aspectos mostrados en la parte  teórica:
+    * suma matrices: ilustra la creación de kernel, gestión de memoria y expresión de paralelismo
+    * Multiplicación de matrices: ilustra el uso de jerarquía de memoria en CUDA y uso de librerías optimizadas como cuBLAS
+    * Transposición de matrices: ilustra uso eficiente de jerarquía de memoria en CUDA (global-compartida) y uso de herramienta de perfilado para evaluar posibles ineficiencias
+    * Debug: ejemplo para ilustar el depurador en CUDA basado en **gdb**
+* Los códigos que se han de entregar están en la [sección "Entrega evaluable"](#entrega-evaluable)
+
+
+
 ## Objetivos
 * Familiarizarse con la arquitectura CUDA
 * Evaluar las mejoras/speedup de GPU vs CPU
@@ -88,7 +100,7 @@ bogomips : 4224.00
 clflush size : 64
 ```
 
-# Ejemplos para trabajar
+# Ejemplos
 * En este repositorio se encuentran los códigos para que el alumnado conozca las principales caracteristicas de programación de GPUs con el modelo de CUDA
 * Antes de nada vamos a conocer las características de la GPU con que trabajaremos en el laboratorio mediante el [código **device_info**](device_info/device_info.cu)
     * Para compilar vamos a utilizar el compilador [NVIDIA CUDA Compiler Driver NVCC **nvcc**](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/)
@@ -430,6 +442,7 @@ __global__ void transpose_device(float *in, float *out, int rows, int cols)
 * Como funciona:
     * Se puede solicitar la información del dispositivo, bloque y thread, imprimiendo variables y cambiando los valores de las variables
     * Para ello es posible conmutar entre *bloque y thread*
+* El ejemplo de código está en el [directorio](debug/)
 
 ```bash
 carlos@posets:~/cuda-gdb ./exec
@@ -478,7 +491,7 @@ Program received signal CUDA_EXCEPTION_10, Device Illegal Address.
     * ¿Qué *thread* ha sido el causante del error?
     * ¿Por qué?
 
-# Entregable
+# Entrega evaluable
 ## Lane-assist
 * Aplicación de tratamiento de imágenes incluida en los vehículos actuales
 * Se basa en algoritmos de tratamiento de imágenes
@@ -546,9 +559,9 @@ $Out(i,j) = \frac{1}{159} \begin{bmatrix}
     * Si $\phi=45^{\circ}$ (borde NW o SE) si $G>G_{NE}$ y $G>G_{SW}$
 
 ### Transformada de Hough
-    * Tomaremos como ejemplo la transformada de Hough bastante común en tratamiento de imágenes
-        * Más [info](https://es.wikipedia.org/wiki/Transformada_de_Hough)
-    * Después de aplicar un detector de bordes a una imagen (ej: operador Sobel, Canny)
+* Tomaremos como ejemplo la transformada de Hough bastante común en tratamiento de imágenes
+    * Más [info](https://es.wikipedia.org/wiki/Transformada_de_Hough)
+* Después de aplicar un detector de bordes a una imagen (ej: operador Sobel, Canny)
 
 ![Imagen](figures/building.png)
 ![Imagen](figures/canny_building.png)
