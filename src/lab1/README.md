@@ -424,3 +424,189 @@ __global__ void transpose_device(float *in, float *out, int rows, int cols)
 ![imagen](figures/CUDAv4.png)
 
 
+## Debuging
+* Dentro del toolkit de CUDA existe una herramienta de depuración: [cuda-gdb](http://docs.nvidia.com/cuda/cuda-gdb)
+    * Requistos: habilitar las opciones de depuración **-g -G** en el **nvcc**: ```nvcc -g -G fuente.cu -o exec```
+* Como funciona:
+    * Se puede solicitar la información del dispositivo, bloque y thread, imprimiendo variables y cambiando los valores de las variables
+    * Para ello es posible conmutar entre *bloque y thread*
+
+```bash
+carlos@posets:~/cuda-gdb ./exec
+(cuda-gdb) cuda device sm warp lane block thread 
+block (0,0,0), thread (0,0,0), device 0, sm 0, warp 0, lane 0
+
+(cuda-gdb) cuda kernel block thread 
+kernel 1, block (0,0,0), thread (0,0,0) 
+
+(cuda-gdb) cuda kernel 
+kernel 1
+```
+     * ¿Como conmutar?: en linea de comando con *cuda block ID thread ID*
+     
+```bash
+(cuda-gdb) cuda block 1 thread 3 
+[Switching focus to CUDA kernel 1, grid 2, block (1,0,0), thread (3,0,0), device 0, sm 3, warp 0, lane 3]
+```
+
+### ToDo
+* Compilar con las opciones de depuración e invocar el depurador (cuda-gdb) 
+    * Excepción de la línea 17: *CUDA_EXCEPTION_10*
+        * Identificar que significa esa excepción en la [URL](http://docs.nvidia.com/cuda/cuda-gdb)
+        * API de *gdb* consultable en [**gdb cheatsheet**](http://users.ece.utexas.edu/~adnan/gdb-refcard.pdf)
+
+```bash
+(cuda-gdb) run 
+Starting program: /.../example 
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+[New Thread 0x7ffff5d0e700 (LWP 22874)]
+
+CUDA Exception: Device Illegal Address
+The exception was triggered in device 0.
+
+Program received signal CUDA_EXCEPTION_10, Device Illegal Address.
+[Switching focus to CUDA kernel 0, grid 1, block (3,0,0), thread (32,0,0), device 0, sm 7, warp 1, lane 0]
+0x0000000000811a98 in example(int * @global * @global)<<<(8,1,1),(64,1,1)>>> (data=0x902f20000) at autostep.cu:17
+17		*(data[idx1]) = value3;
+```
+* ¿Como proceder?
+    * Introducir *breakpoint* en línea anterior (16)
+    * Cambiar contexto (*block* y *thread*)
+    * NOTA: el error se muestra para un *warp* en cuestión no para el hilo correspondiente
+* Preguntas
+    * ¿Qué *thread* ha sido el causante del error?
+    * ¿Por qué?
+
+# Entregable
+## Lane-assist
+* Aplicación de tratamiento de imágenes incluida en los vehículos actuales
+* Se basa en algoritmos de tratamiento de imágenes
+    * Detección de bordes: **Filtrado canny**
+    * Detección de líneas: **Transformada de Hough**
+
+![Imagen](figures/line_assist.png)
+
+### Ejecutable
+* Sintasis:
+* **./image input_image.png [c,g]**
+    * c: código ejecutado en CPU
+    * g: código ejecutado en GPU
+
+
+
+### Detección de bordes
+* Detección de bordes: **Filtrado canny**
+    * Basado en **convolución 2D**
+
+![Imagen](figures/lenna_canny.png)
+
+* ¿Que es la operación de convolución?
+![Imagen](figures/convolution3x3.png)
+
+* Etapas
+    1. Reducción de ruido (filtro *blur*)
+    2. Gradiente de la imagen
+    3. Supresión no-máximo
+
+### Reducción de ruido (convolución 2D)
+
+$Out(i,j) = \frac{1}{159} \begin{bmatrix}
+2 &  4 &  5 &  4 & 2 \\ 
+4 &  9 & 12 &  9 & 4 \\ 
+5 & 12 & 15 & 12 & 5 \\ 
+4 &  9 & 12 &  9 & 4 \\ 
+2 &  4 &  5 &  4 & 2
+\end{bmatrix} In(i-2:i+2,j-2:j+2)$
+
+![Imagen](figures/convolution3x3.png)
+
+### Gradiente de la imagen
+* $Gx(i,j) = \begin{bmatrix}
+1 &  2 & 0 &  -2 & -1 \\ 
+4 &  8 & 0 &  -8 & -4 \\ 
+6 & 12 & 0 & -12 & -6 \\ 
+4 &  8 & 0 &  -8 & -4 \\ 
+1 &  2 & 0 &  -2 & -1 \\ 
+\end{bmatrix} NR(i-2:i+2,j-2:j+2)$
+
+* $G = \sqrt{{G_x}^2+{G_y}^2}$
+* $\phi = \arctan2({G_x}^{2},{G_y}^{2})$
+
+### Supresión no-máximo
+* Determina si la magnitud del gradiente (G) es máximo local (redondeo $\phi\in 0^{\circ},45^{\circ},90^{\circ},135^{\circ}$)
+    * Umbral de histéresis: dos umbrales alto y bajo
+        * Si el gradiente G>umbral_alto $\Rightarrow$ **borde**
+        * Si el gradiente G>umbral_bajo y **es máximo local** $\Rightarrow$ **borde**
+
+* Máximo local
+    * Si $\phi=0^{\circ}$ (borde N o S) si $G>G_E$ y $G>G_W$
+    * Si $\phi=90^{\circ}$ (borde E o W) si $G>G_N$ y $G>G_S$
+    * Si $\phi=135^{\circ}$ (borde NE o SW) si $G>G_{NW}$ y $G>G_{SE}$
+    * Si $\phi=45^{\circ}$ (borde NW o SE) si $G>G_{NE}$ y $G>G_{SW}$
+
+### Transformada de Hough
+    * Tomaremos como ejemplo la transformada de Hough bastante común en tratamiento de imágenes
+        * Más [info](https://es.wikipedia.org/wiki/Transformada_de_Hough)
+    * Después de aplicar un detector de bordes a una imagen (ej: operador Sobel, Canny)
+
+![Imagen](figures/building.png)
+![Imagen](figures/canny_building.png})
+
+* La transformada de Hough es útil en muchos algoritmo de detección de líneas en una imagen
+    * Emplea un sistema votador
+
+* Para detectar una recta revisamos la representación matemática:  $y=m*x+n$
+    * Donde $(x,y)$ corresponde a cada píxel de la imagen: **problema con líneas verticales**: $m=\infty$
+* También se puede representar en coordenadas polares: $y=-\frac{\cos{\theta}}{\sin{\theta}}*x+ \frac{\rho}{\sin{\theta}}$
+* O finalmente como ${\rho}=x*\cos{\theta}+y*\sin{\theta}$ asociando a cada recta el par $(\rho, \theta)$
+
+* Implementación de la transformada de Hough
+    * El algoritmo de Hough almacena el resultado una **matriz acumulador** (votación) para cada píxel: 
+
+``` code
+[1] cargar imagen
+[2] detectar los bordes en la imagen
+[3] por cada punto en la imagen:
+[4]    si el punto (x,y) esta en un borde:
+[5]       por todos los posibles ángulos theta:
+[6]          calcular rho para el punto (x,y) con un ángulo theta
+[7]          incrementar la posición (rho, theta) en el acumulador
+[8] buscar las posiciones con los mayores valores en el acumulador
+[9] devolver las rectas cuyos valores son los mayores en el acumulador.
+```
+
+![Imagen](figures/Hough_transform_diagram.png)
+
+### Implementación
+* Esqueleto del código: *main.c* y *kernel.h*
+* Modificación del código fuente *kernel.cu*
+* Imágenes de prueba en directorio **images**
+
+``` c
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <cuda.h>
+
+#include "routinesGPU.h"
+
+void line_asist_GPU(uint8_t *im, int height, int width,
+	uint8_t *imEdge, float *NR, float *G, float *phi, float *Gx, float *Gy, uint8_t *pedge,
+	float *sin_table, float *cos_table, 
+	uint32_t *accum, int accu_height, int accu_width,
+	int *x1, int *x2, int *y1, int *y2, int *nlines)
+{
+
+	/* To do */
+}
+```
+
+* A tener en cuenta
+    * Explotación del máximo paralelismo en un kernel
+    * Explotación de jerarquía de memoria si hay reuso de información
+    * Dependencias de datos entre etapas (se pueden resolver con kernels distintos)
+    * Operaciones de tipo "incremento" o ```i++``` no son eficientes en GPU (read-write sharing variable)
+        * [Ver enlace](https://developer.nvidia.com/blog/faster-parallel-reductions-kepler/)
+        * Posibilidad de implementar con instruciones **atomic**
+
