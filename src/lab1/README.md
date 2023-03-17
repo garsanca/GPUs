@@ -6,7 +6,7 @@
     * suma matrices: ilustra la creación de kernel, gestión de memoria y expresión de paralelismo
     * Multiplicación de matrices: ilustra el uso de jerarquía de memoria en CUDA y uso de librerías optimizadas como cuBLAS
     * Transposición de matrices: ilustra uso eficiente de jerarquía de memoria en CUDA (global-compartida) y uso de herramienta de perfilado para evaluar posibles ineficiencias
-    * Debug: ejemplo para ilustar el depurador en CUDA basado en **gdb**
+    * Debug: ejemplo para ilustrar el depurador en CUDA basado en **gdb**
 * Los códigos que se han de entregar están en la [sección "Entrega evaluable"](#entrega-evaluable)
 
 
@@ -352,14 +352,6 @@ Time(%)      Time     Calls       Avg       Min       Max  Name
 ![Imagen](figures/CUDAv2.png)
 
 
-* Sin embargo el **SOL SM [%] es del 5,70**, quiere decir que el Speed of Light (SOL) solamente es el 5,7% del máximo
-* **¿A qué es debido?**
-     * En el apartado *Warp State (All cycles) da una idea de la razón*
-     * Consultar la tabla *Table 6. Warp Scheduler States* del [manual Nsight](https://docs.nvidia.com/nsight-compute/NsightCompute/index.html\#profiler-report-summary-page)
-    * *Stall Drain*: Warp was stalled after EXIT waiting for all memory instructions to complete
-    * *Stall long Scoreboard*: Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, tex) operation. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture
-
-![Imagen](figures/CUDAv2_WarpScheduleStates.png)
 
 * Versión v2 de la transposición de matrices: **Accesos alineados/desalineados**
 
@@ -433,13 +425,12 @@ __global__ void transpose_device(float *in, float *out, int rows, int cols)
 
 * Versión v4 de la transposición de matrices: **sin conflicto en shared**
 
-![imagen](figures/CUDAv4.png)
 
-### ncu
+### Perfilado con **ncu**
 * El [NVIDIA Nsight Compute Command Line Interface](https://docs.nvidia.com/nsight-compute/NsightComputeCli/index.html) tiene un interfaz de uso también por línea de comandos que puede ser usado desde la consola que nos devuelve valores interesantes para el usuario como
     * GPU Speed of Light Throughtput
     * Occupancy
-    * Stadistics
+    * Statistics
 
 ```bash
 usuario_local@profess11:~$ ncu --print-summary none ./transpose
@@ -510,10 +501,19 @@ usuario_local@profess11:~$ ncu-ui out.ncu-rep
 
 ```
 
+### ToDo
+
+* Del ejemplo de la transposición de matrices v1, que contenía muchas accesos a memoria no "coalescentes" el profiler refleja varios avisos que son interesantes seguir para mejorar el rendimiento global de la aplicación que paso a resumir:
+    * **Small Grid**: This kernel grid is too small to fill the available resources on this device, resulting in only 0.3 full waves across all SMs 
+    * **Low Utilization**: All compute pipelines are under-utilized...
+    * **Uncoalesced Global Accesses**: This kernel has uncoalesced global accesses resulting in a total of 58720256 excessive sectors (78% of the total 75497472 sectors). 
+    
+![Imagen](figures/ncu_warnings.png)
+
 
 ## Debuging
 * Dentro del toolkit de CUDA existe una herramienta de depuración: [cuda-gdb](http://docs.nvidia.com/cuda/cuda-gdb)
-    * Requistos: habilitar las opciones de depuración **-g -G** en el **nvcc**: ```nvcc -g -G fuente.cu -o exec```
+    * Requisitos: habilitar las opciones de depuración **-g -G** en el **nvcc**: ```nvcc -g -G fuente.cu -o exec```
 * Como funciona:
     * Se puede solicitar la información del dispositivo, bloque y thread, imprimiendo variables y cambiando los valores de las variables
     * Para ello es posible conmutar entre *bloque y thread*
