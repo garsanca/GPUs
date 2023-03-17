@@ -435,6 +435,66 @@ __global__ void transpose_device(float *in, float *out, int rows, int cols)
 
 ![imagen](figures/CUDAv4.png)
 
+### ncu
+* El [NVIDIA Nsight Compute Command Line Interface](https://docs.nvidia.com/nsight-compute/NsightComputeCli/index.html) tiene un interfaz de uso también por línea de comandos que puede ser usado desde la consola que nos devuelve valores interesantes para el usuario como
+    * GPU Speed of Light Throughtput
+    * Occupancy
+    * Stadistics
+
+```bash
+user@system:~/cuda-example ncu --print-summary none ./transpose
+ncu --print-summary none ./transpose
+./exec n (by default n=8192)
+==PROF== Connected to process 69516 (/tmp/GPUs/src/lab1/matrix_transpose/CUDA.v1/transpose)
+Transpose version 1D: 385.682734 MB/s
+==PROF== Profiling "transpose_device" - 0: 0%....50%....100% - 9 passes
+Transpose kernel version: 712.778220 MB/s tKernel=0.359158 (us)
+==PROF== Disconnected from process 69516
+[69516] transpose@127.0.0.1
+  transpose_device(float *, float *, int, int), 2023-Mar-17 14:00:06, Context 1, Stream 7
+    Section: GPU Speed Of Light Throughput
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    DRAM Frequency                                                           cycle/nsecond                           6,72
+    SM Frequency                                                             cycle/nsecond                           1,35
+    Elapsed Cycles                                                                   cycle                     13.490.336
+    Memory [%]                                                                           %                          44,19
+    DRAM Throughput                                                                      %                          19,27
+    Duration                                                                       msecond                           9,97
+    L1/TEX Cache Throughput                                                              %                          67,40
+    L2 Cache Throughput                                                                  %                          44,19
+    SM Active Cycles                                                                 cycle                   9.420.231,80
+    Compute (SM) [%]                                                                     %                           4,17
+
+```
+
+* Incluso se puede sacar información a nivel de **kernel** con la opción **per-kernel**
+
+```bash
+user@system:~/cuda-example ncu --print-summary per-kernel ./transpose
+./exec n (by default n=8192)
+==PROF== Connected to process 69642 (/tmp/GPUs/src/lab1/matrix_transpose/CUDA.v1/transpose)
+Transpose version 1D: 375.514682 MB/s
+==PROF== Profiling "transpose_device" - 0: 0%....50%....100% - 9 passes
+Transpose kernel version: 721.681744 MB/s tKernel=0.354727 (us)
+==PROF== Disconnected from process 69642
+[69642] transpose@127.0.0.1
+  transpose_device(float *, float *, int, int), Block Size 256, Grid Size 32, Device 0, 1 invocations 
+    Section: GPU Speed Of Light Throughput
+    Metric Name                                                      Metric Unit   Minimum         Maximum         Average        
+    ---------------------------------------------------------------- ------------- --------------- --------------- ---------------
+    dram__cycles_elapsed.avg.per_second                              cycle/nsecond 6.701347        6.701347        6.701347       
+    gpc__cycles_elapsed.avg.per_second                               cycle/nsecond 1.348120        1.348120        1.348120       
+    gpc__cycles_elapsed.max                                          cycle         13479154.000000 13479154.000000 13479154.000000
+    gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed %             44.233118       44.233118       44.233118      
+    gpu__dram_throughput.avg.pct_of_peak_sustained_elapsed           %             19.357729       19.357729       19.357729      
+    gpu__time_duration.sum                                           msecond       9.989888        9.989888        9.989888       
+    l1tex__throughput.avg.pct_of_peak_sustained_active               %             67.446880       67.446880       67.446880      
+    lts__throughput.avg.pct_of_peak_sustained_elapsed                %             44.233118       44.233118       44.233118      
+    sm__cycles_active.avg                                            cycle         9440141.700000  9440141.700000  9440141.700000 
+    sm__throughput.avg.pct_of_peak_sustained_elapsed                 %             4.181825        4.181825        4.181825
+
+```
+
 
 ## Debuging
 * Dentro del toolkit de CUDA existe una herramienta de depuración: [cuda-gdb](http://docs.nvidia.com/cuda/cuda-gdb)
