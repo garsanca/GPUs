@@ -551,7 +551,7 @@ $Out(i,j) = \frac{1}{159} \begin{bmatrix}
     * Después de aplicar un detector de bordes a una imagen (ej: operador Sobel, Canny)
 
 ![Imagen](figures/building.png)
-![Imagen](figures/canny_building.png})
+![Imagen](figures/canny_building.png)
 
 * La transformada de Hough es útil en muchos algoritmo de detección de líneas en una imagen
     * Emplea un sistema votador
