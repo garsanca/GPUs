@@ -442,7 +442,7 @@ __global__ void transpose_device(float *in, float *out, int rows, int cols)
     * Stadistics
 
 ```bash
-user@system:~/cuda-example ncu --print-summary none ./transpose
+usuario_local@profess11:~$ ncu --print-summary none ./transpose
 ncu --print-summary none ./transpose
 ./exec n (by default n=8192)
 ==PROF== Connected to process 69516 (/tmp/GPUs/src/lab1/matrix_transpose/CUDA.v1/transpose)
@@ -470,7 +470,7 @@ Transpose kernel version: 712.778220 MB/s tKernel=0.359158 (us)
 * Incluso se puede sacar información a nivel de **kernel** con la opción **per-kernel**
 
 ```bash
-user@system:~/cuda-example ncu --print-summary per-kernel ./transpose
+usuario_local@profess11:~$ ncu --print-summary per-kernel ./transpose
 ./exec n (by default n=8192)
 ==PROF== Connected to process 69642 (/tmp/GPUs/src/lab1/matrix_transpose/CUDA.v1/transpose)
 Transpose version 1D: 375.514682 MB/s
@@ -492,6 +492,21 @@ Transpose kernel version: 721.681744 MB/s tKernel=0.354727 (us)
     lts__throughput.avg.pct_of_peak_sustained_elapsed                %             44.233118       44.233118       44.233118      
     sm__cycles_active.avg                                            cycle         9440141.700000  9440141.700000  9440141.700000 
     sm__throughput.avg.pct_of_peak_sustained_elapsed                 %             4.181825        4.181825        4.181825
+
+```
+
+* También se puede generar un fichero de traza con la opción **-o** que luego puede ser visualizado de con la herramienta **ncu-ui**
+
+```bash
+usuario_local@profess11:~$ ncu -o out --set detailed ./transpose 
+./exec n (by default n=8192)
+==PROF== Connected to process 69807 (/tmp/GPUs/src/lab1/matrix_transpose/CUDA.v1/transpose)
+Transpose version 1D: 385.661817 MB/s
+==PROF== Profiling "transpose_device" - 0: 0%....50%....100% - 18 passes
+Transpose kernel version: 355.037300 MB/s tKernel=0.721050 (us)
+
+
+usuario_local@profess11:~$ ncu-ui out.ncu-rep
 
 ```
 
