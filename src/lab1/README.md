@@ -569,6 +569,7 @@ Program received signal CUDA_EXCEPTION_10, Device Illegal Address.
 # Entrega evaluable
 ## Lane-assist
 * Aplicación de tratamiento de imágenes incluida en los vehículos actuales
+* Código disponible en directorio [lane-assist](lane-assist)
 * Se basa en algoritmos de tratamiento de imágenes
     * Detección de bordes: **Filtrado canny**
     * Detección de líneas: **Transformada de Hough**
