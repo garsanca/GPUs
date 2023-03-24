@@ -1,7 +1,7 @@
 
 CXX = g++
 CC = gcc
-NVCC = gcc
+NVCC = nvcc
 
 #OpenCV
 CXX_OPENCV_FLAGS+=`pkg-config opencv --cflags`
