@@ -8,6 +8,7 @@
     * Transposición de matrices: ilustra uso eficiente de jerarquía de memoria en CUDA (global-compartida) y uso de herramienta de perfilado para evaluar posibles ineficiencias
     * Debug: ejemplo para ilustrar el depurador en CUDA basado en **gdb**
 * Los códigos que se han de entregar están en la [sección "Entrega evaluable"](#entrega-evaluable)
+    * Se podrá hacer uso del [google-colab](https://colab.research.google.com/) para poder desarrollar el código, cuyas instrucciones están en el cuaderno de [jupyter](google-colab/CUDA_colab.ipynb) que incluye un caso de uso y compilación de código en CUDA, además de mostrar los pasos a seguir para poder montar el Google-Drive
 
 
 
