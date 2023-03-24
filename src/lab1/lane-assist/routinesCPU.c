@@ -251,7 +251,7 @@ void draw_lines(uint8_t *imgtmp, int width, int height, int *x1, int *y1, int *x
 			}
 }
 
-void line_asist_CPU(uint8_t *im, int height, int width,
+void lane_assist_CPU(uint8_t *im, int height, int width,
 	uint8_t *imEdge, float *NR, float *G, float *phi, float *Gx, float *Gy, uint8_t *pedge,
 	float *sin_table, float *cos_table, 
 	uint32_t *accum, int accu_height, int accu_width,

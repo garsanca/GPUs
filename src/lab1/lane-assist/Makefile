@@ -11,7 +11,8 @@ LD_OPENCV_FLAGS+=`pkg-config opencv --libs`
 CFLAGS=-O3 -I. 
 CXXFLAGS=-O3 -I.
 
-LIBS =-lpng -lm -lcuda -lcudart
+LIBS =-lpng -lm 
+#-lcuda -lcudart
 
 SRC = png_io.o routinesCPU.o routinesGPU.o main.o
 	
