@@ -10,3 +10,8 @@
 * Las instrucciones y códigos del [laboratorio 2](src/lab2/README.md)
 
 ![Imagen](figures/SYCL_logo.png)
+
+## Práctica 3: Programación de GPUs mediante directivas
+* Las instrucciones y códigos del [laboratorio 3](src/lab3/README.md)
+
+![Imagen](figures/OpenACC-logo.png)
