@@ -15,3 +15,8 @@
 * Las instrucciones y códigos del [laboratorio 3](src/lab3/README.md)
 
 ![Imagen](figures/OpenACC-logo.png)
+
+
+## Práctica 4: Programación de GPUs para IA
+* Las instrucciones y códigos del [laboratorio 4](src/lab4/README.md)
+
