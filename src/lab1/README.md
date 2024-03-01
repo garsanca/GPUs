@@ -566,7 +566,24 @@ Program received signal CUDA_EXCEPTION_10, Device Illegal Address.
 * Preguntas
     * ¿Qué *thread* ha sido el causante del error?
     * ¿Por qué?
+    
+### Extensión Visual-Code
+* Existe la posibilidad de añadir una extensión dentro del [Visual Code](https://code.visualstudio.com/) para permitir la depuración integrada mediante el **cuda-gdb**
+* La extensión se llama [**Nsight Visual Studio Code Edition**](https://marketplace.visualstudio.com/items?itemName=NVIDIA.nsight-vscode-edition)
+    * Para añadirla a MS-Vcode clicar en la barra de la izquierda->extensiones o con el ataja "Ctrl+Mayúsc+X" y buscar "Nsight Visual Studio Code Edition"
+    * Una vez instalada la extensión es necesario configurar la opción de depuración en el fichero "launch.json" y añadir el depurador mediante el **cuda-gdb** y añadir el programa a depurar previamente compilado con las opciones **-g -G**
+    
+![Imagen](figures/config-vscode.png)
 
+* Proceso de depuración:
+    1. Ejecutar proceso de depuración con "F5" o Menú Ejecutar->Iniciar depuración
+    2. Añadir breakpoint 
+    3. Conmutar de hilo-bloque, para ello pinchar en la barra inferior azul "CUDA: (0, 0, 0) (0, 0, 0). Ver figura adjunta
+    4. Proceder a la depuración mediante la visuación de Variables o Inspeccionando expresiones
+
+![Imagen](figures/conmute-block-vscode.png)
+    
+    
 # Entrega evaluable
 ## Lane-assist
 * Aplicación de tratamiento de imágenes incluida en los vehículos actuales
