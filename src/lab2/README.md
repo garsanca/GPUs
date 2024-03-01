@@ -23,7 +23,7 @@
 * Únicamente hay que tener en cuenta 3 cuestiones:
      1. Está instalado en el sistema operativo **GNU-Linux**
      2. El entorno (compiladores, herramientas y librerías) se activan cargando el script **setvars.sh**: ```source /opt/intel/oneapi/setvars.sh```. Es importante hacerlo cada vez que se abra una consola o terminal
-     3. Para que el compilador **dpcpp** o **icx** encuentre las cabeceras de C++ hay que exportar correctamente la variable de entorno **CPATH**: ```export CPATH=$CPATH:/usr/include/c++/11:/usr/include/x86_64-linux-gnu/c++/11```
+     3. Para que el compilador **dpcpp** o **icx** habilite la lambdas con SYCL se suele compilar con el flags `-fsycl` y para poder usar las GPUs de NVIDIA se debería compilar con los flags `-fsycl -fsycl-targets=nvptx64-nvidia-cuda`. A modo de ejemplo indico la línea de compilación global para un archivo: ```icpx -fsycl -fsycl-targets=nvptx64-nvidia-cuda -o exec.cuda main.cpp```
 
 ```bash
 user@host:~/ $ source /opt/intel/oneapi/setvars.sh 
@@ -54,13 +54,11 @@ user@host:~/ $ source /opt/intel/oneapi/setvars.sh
 :: vtune -- latest
 :: oneAPI environment initialized ::
  
-user@host:~/ $ export CPATH=$CPATH:/usr/include/c++/11:/usr/include/x86_64-linux-gnu/c++/11
 user@host:~/ $ sycl-ls 
-[opencl:0] ACC : Intel(R) FPGA Emulation Platform for OpenCL(TM) 1.2 [2021.13.11.0.23_160000]
-[opencl:0] CPU : Intel(R) OpenCL 3.0 [2021.13.11.0.23_160000]
-[opencl:0] GPU : Intel(R) OpenCL HD Graphics 3.0 [22.28.23726.1]
-[level_zero:0] GPU : Intel(R) Level-Zero 1.3 [1.3.23726]
-[host:0] HOST: SYCL host platform 1.2 [1.2]
+[opencl:acc:0] Intel(R) FPGA Emulation Platform for OpenCL(TM), Intel(R) FPGA Emulation Device 1.2 [2023.15.3.0.20_160000]
+[opencl:cpu:1] Intel(R) OpenCL, 13th Gen Intel(R) Core(TM) i7-13700 3.0 [2023.15.3.0.20_160000]
+[ext_oneapi_cuda:gpu:0] NVIDIA CUDA BACKEND, NVIDIA GeForce RTX 3070 0.0 [CUDA 12.2]
+
 ```
 
 
@@ -153,57 +151,64 @@ echo
 
 |   |   |
 |---|---|
-|**type**               | **Device**                                                   |
-| default\_selector     | Selects any device or host device if no device can be found  |
-| gpu\_selector         | Select a GPU                                                 |
-| accelerator\_selector | Select an accelerator                                        |
-| cpu\_selector         | Select a CPU device                                          |
-| host\_selector        | Select the host device                                       |
-|*my\_device\_selector* | *Custom selector*                                            | 
+|**type**                 | **Device**                                                   |
+| default\_selector_v     | Selects any device or host device if no device can be found  |
+| gpu\_selector_v         | Select a GPU                                                 |
+| accelerator\_selector_v | Select an accelerator                                        |
+| cpu\_selector_v         | Select a CPU device                                          |
+|*my\_device\_selector*   | *Custom selector*                                            | 
+
 
 
 * El siguiente [código](helloWorld/main.cpp) disponible en el directorio [helloWorld](helloWorld/) muestra un ejemplo de selección, donde
-    * La línea ```d = sycl::device(sycl::gpu_selector());``` seleccione el dispositivo
+    * La línea ```d = sycl::device(sycl::gpu_selector_v);``` seleccione el dispositivo
     * La clase ```d.get_info``` devuelve informacion asociada al dispositivo
     * el ```single_task``` escribe en la salida la cadena "Hello, World!", que está asociada a la ejecución en el **dispositivo seleccionado**
 
 
 ```c
-int main() {
-  sycl::device d;
- 
-  d = sycl::device(sycl::gpu_selector());
-  std::cout << "Using " << d.get_info<sycl::info::device::name>();
+#include <CL/sycl.hpp>
 
-  sycl::queue Q(d);
+using  namespace  cl::sycl;
 
-  Q.submit([&](sycl::handler &cgh) {
-    // Create a output stream
-    sycl::stream sout(1024, 256, cgh);
-    // Submit a unique task, using a lambda
-    cgh.single_task([=]() {
-      sout << "Hello, World!" << sycl::endl;
-    }); // End of the kernel function
-  });   // End of the queue commands. The kernel is now submited
+int main(int argc, char **argv) {
 
-  // wait for all queue submissions to complete
-  Q.wait();
-}
+	sycl::queue Q(sycl::gpu_selector_v);
+
+	std::cout << "Running on "
+		<< Q.get_device().get_info<sycl::info::device::name>()
+		<< std::endl;
+
+	Q.submit([&](handler &cgh) {
+		// Create a output stream
+		sycl::stream sout(1024, 256, cgh);
+		// Submit a unique task, using a lambda
+		cgh.single_task([=]() {
+			sout << "Hello, World!" << sycl::endl;
+		}); // End of the kernel function
+	});   // End of the queue commands. The kernel is now submited
+
+	// wait for all queue submissions to complete
+	Q.wait();
+
+
+  return 0;
+
 ```
 
 * Para compilar los código existe un fichero [Makefile](helloWorld/Makefile) que invocando **make** en consola genera el ejecutable **exec**
 
 ```bash
-user@host:~/ $ make
-dpcpp -c -o main.o main.cpp -I.
-dpcpp -o exec main.o -I.  
+user@host:~/ $make
+icpx -fsycl -fsycl-targets=nvptx64-nvidia-cuda -c -o main.o main.cpp -I.
+icpx -fsycl -fsycl-targets=nvptx64-nvidia-cuda -o exec main.o -I. -L/usr/lib/gcc/x86_64-linux-gnu/11 
 user@host:~/ $ ls
 exec  main.cpp  main.o  Makefile
 
 user@host:~/ $ ./exec
-
-Running on Intel(R) UHD Graphics 620 [0x5917]
+Running on NVIDIA GeForce RTX 3070
 Hello, World!
+
 ```
 ### ToDo
 * Se recomienda experimentar con el cambio de **selector** para seleccionar CPU/GPU...
