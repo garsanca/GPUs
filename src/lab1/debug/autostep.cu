@@ -42,6 +42,6 @@ int main(int argc, char *argv[]) {
 
     /* Execute example */
     example <<< NUM_BLOCKS, THREADS_PER_BLOCK >>> (dev_data);
-    cudaThreadSynchronize();
+    cudaDeviceSynchronize();
 }
 

@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	dim3 dimGrid(...,...);
 	t0 = wtime();
 	addMatrixGPU<<<dimGrid,dimBlock>>>(a_GPU, b_GPU, c_GPU, N);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize()
 	t1 = wtime(); printf("Time GPU=%f\n", t1-t0);
 
 	/* GPU->CPU */
