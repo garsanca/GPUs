@@ -43,7 +43,7 @@ public:
   void start();
   
 private:
-  ParticleSoA *particles;
+  ParticleAoS *particles;
   
   int       _npart;		//number of particles
   int	    _nsteps;		//number of integration steps

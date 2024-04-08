@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
 	int N = atoi(argv[1]);
 
-	sycl::queue Q(sycl::gpu_selector{});
+	sycl::queue Q(sycl::gpu_selector_v);
 
 	std::cout << "Running on "
 		<< Q.get_device().get_info<sycl::info::device::name>()

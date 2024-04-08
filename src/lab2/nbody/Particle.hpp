@@ -23,10 +23,10 @@
 #include <cmath>
 #include "types.hpp"
 
-struct Particle
+struct ParticleAoS
 {
   public:
-    Particle() { init();}
+    ParticleAoS() { init();}
     void init() 
     {
       pos[0] = 0.; pos[1] = 0.; pos[2] = 0.;

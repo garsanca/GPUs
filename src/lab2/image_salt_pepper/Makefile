@@ -1,9 +1,9 @@
 
-CXX = dpcpp
+CXX = icpx
 
-CXXFLAGS=-O3
+CXXFLAGS=-fsycl -O3
 
-LIBS=-L/usr/lib/gcc/x86_64-linux-gnu/11
+LIBS=
 
 
 main: main.cpp kernels.cpp 

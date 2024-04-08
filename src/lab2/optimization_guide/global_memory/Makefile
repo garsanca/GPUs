@@ -1,6 +1,6 @@
-CXX=dpcpp
-CXXFLAGS=-I. -O3 -gline-tables-only -fdebug-info-for-profiling
-LIBS=-L/usr/lib/gcc/x86_64-linux-gnu/11
+CXX=icpx
+CXXFLAGS=-fsycl -I. -O3 -gline-tables-only -fdebug-info-for-profiling
+LIBS=
 
 %.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)

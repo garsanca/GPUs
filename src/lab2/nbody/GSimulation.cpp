@@ -49,9 +49,9 @@ void GSimulation :: init_pos()
   
   for(int i=0; i<get_npart(); ++i)
   {
-    particles->pos_x[i] = unif_d(gen);
-    particles->pos_y[i] = unif_d(gen);
-    particles->pos_z[i] = unif_d(gen);
+    particles[i].pos[0] = unif_d(gen);
+    particles[i].pos[1] = unif_d(gen);
+    particles[i].pos[2] = unif_d(gen);
   }
 }
 
@@ -63,9 +63,9 @@ void GSimulation :: init_vel()
 
   for(int i=0; i<get_npart(); ++i)
   {
-    particles->vel_x[i] = unif_d(gen) * 1.0e-3f;
-    particles->vel_y[i] = unif_d(gen) * 1.0e-3f;
-    particles->vel_z[i] = unif_d(gen) * 1.0e-3f; 
+    particles[i].vel[0] = unif_d(gen) * 1.0e-3f;
+    particles[i].vel[1] = unif_d(gen) * 1.0e-3f;
+    particles[i].vel[2] = unif_d(gen) * 1.0e-3f; 
   }
 }
 
@@ -73,9 +73,9 @@ void GSimulation :: init_acc()
 {
   for(int i=0; i<get_npart(); ++i)
   {
-    particles->acc_x[i] = 0.f; 
-    particles->acc_y[i] = 0.f;
-    particles->acc_z[i] = 0.f;
+    particles[i].acc[0] = 0.f; 
+    particles[i].acc[1] = 0.f;
+    particles[i].acc[2] = 0.f;
   }
 }
 
@@ -88,7 +88,7 @@ void GSimulation :: init_mass()
 
   for(int i=0; i<get_npart(); ++i)
   {
-    particles->mass[i] = n * unif_d(gen); 
+    particles[i].mass = n * unif_d(gen); 
   }
 }
 
@@ -101,29 +101,29 @@ void GSimulation :: get_acceleration(int n)
 
    for (i = 0; i < n; i++)// update acceleration
    {
-     real_type ax_i = particles->acc_x[i];
-     real_type ay_i = particles->acc_y[i];
-     real_type az_i = particles->acc_z[i];
+     real_type ax_i = particles[i].acc[0];
+     real_type ay_i = particles[i].acc[1];
+     real_type az_i = particles[i].acc[2];
      for (j = 0; j < n; j++)
      {
          real_type dx, dy, dz;
 	 real_type distanceSqr = 0.0f;
 	 real_type distanceInv = 0.0f;
 		  
-	 dx = particles->pos_x[j] - particles->pos_x[i];	//1flop
-	 dy = particles->pos_y[j] - particles->pos_y[i];	//1flop	
-	 dz = particles->pos_z[j] - particles->pos_z[i];	//1flop
+	 dx = particles[j].pos[0] - particles[i].pos[0];	//1flop
+	 dy = particles[j].pos[1] - particles[i].pos[1];	//1flop	
+	 dz = particles[j].pos[2] - particles[i].pos[2];	//1flop
 	
  	 distanceSqr = dx*dx + dy*dy + dz*dz + softeningSquared;	//6flops
  	 distanceInv = 1.0f / sqrtf(distanceSqr);			//1div+1sqrt
 
-	 ax_i += dx * G * particles->mass[j] * distanceInv * distanceInv * distanceInv; //6flops
-	 ay_i += dy * G * particles->mass[j] * distanceInv * distanceInv * distanceInv; //6flops
-	 az_i += dz * G * particles->mass[j] * distanceInv * distanceInv * distanceInv; //6flops
+	 ax_i += dx * G * particles[j].mass * distanceInv * distanceInv * distanceInv; //6flops
+	 ay_i += dy * G * particles[j].mass * distanceInv * distanceInv * distanceInv; //6flops
+	 az_i += dz * G * particles[j].mass * distanceInv * distanceInv * distanceInv; //6flops
      }
-     particles->acc_x[i] = ax_i;
-     particles->acc_y[i] = ay_i;
-     particles->acc_z[i] = az_i;
+     particles[i].acc[0] = ax_i;
+     particles[i].acc[1] = ay_i;
+     particles[i].acc[2] = az_i;
    }
 }
 
@@ -134,22 +134,22 @@ real_type GSimulation :: updateParticles(int n, real_type dt)
 
    for (i = 0; i < n; ++i)// update position
    {
-     particles->vel_x[i] += particles->acc_x[i] * dt; //2flops
-     particles->vel_y[i] += particles->acc_y[i] * dt; //2flops
-     particles->vel_z[i] += particles->acc_z[i] * dt; //2flops
+     particles[i].vel[0] += particles[i].acc[0] * dt; //2flops
+     particles[i].vel[1] += particles[i].acc[1] * dt; //2flops
+     particles[i].vel[2] += particles[i].acc[2] * dt; //2flops
 	  
-     particles->pos_x[i] += particles->vel_x[i] * dt; //2flops
-     particles->pos_y[i] += particles->vel_y[i] * dt; //2flops
-     particles->pos_z[i] += particles->vel_z[i] * dt; //2flops
+     particles[i].pos[0] += particles[i].vel[0] * dt; //2flops
+     particles[i].pos[1] += particles[i].vel[1] * dt; //2flops
+     particles[i].pos[2] += particles[i].vel[2] * dt; //2flops
 
-     particles->acc_x[i] = 0.;
-     particles->acc_y[i] = 0.;
-     particles->acc_z[i] = 0.;
+     particles[i].acc[0] = 0.;
+     particles[i].acc[1] = 0.;
+     particles[i].acc[2] = 0.;
 	
-     energy += particles->mass[i] * (
-	       particles->vel_x[i]*particles->vel_x[i] + 
-               particles->vel_y[i]*particles->vel_y[i] +
-               particles->vel_z[i]*particles->vel_z[i]); //7flops
+     energy += particles[i].mass * (
+	      particles[i].vel[0]*particles[i].vel[0] + 
+               particles[i].vel[1]*particles[i].vel[1] +
+               particles[i].vel[2]*particles[i].vel[2]); //7flops
    }
    return energy;
 }
@@ -159,22 +159,11 @@ void GSimulation :: start()
   real_type energy;
   real_type dt = get_tstep();
   int n = get_npart();
-  
-  //allocate particles
-  particles = new ParticleSoA;
-  
-  particles->pos_x = new real_type[n];
-  particles->pos_y = new real_type[n];
-  particles->pos_z = new real_type[n];
-  particles->vel_x = new real_type[n];
-  particles->vel_y = new real_type[n];
-  particles->vel_z = new real_type[n];
-  particles->acc_x = new real_type[n];
-  particles->acc_y = new real_type[n];
-  particles->acc_z = new real_type[n];
-  particles->mass  = new real_type[n]; 
 
-  init_pos();	
+  //allocate particles
+  particles = new ParticleAoS[n];
+
+  init_pos();
   init_vel();
   init_acc();
   init_mass();
@@ -264,15 +253,5 @@ void GSimulation :: print_header()
 
 GSimulation :: ~GSimulation()
 {
-  delete [] particles->pos_x;
-  delete [] particles->pos_y;
-  delete [] particles->pos_z;
-  delete [] particles->vel_x;
-  delete [] particles->vel_y;
-  delete [] particles->vel_z;
-  delete [] particles->acc_x;
-  delete [] particles->acc_y;
-  delete [] particles->acc_z;
-  delete [] particles->mass;
   delete particles;
 }

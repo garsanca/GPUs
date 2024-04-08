@@ -4,7 +4,7 @@ using  namespace  cl::sycl;
 
 int main(int argc, char **argv) {
 
-	sycl::queue Q(sycl::gpu_selector{});
+	sycl::queue Q(sycl::gpu_selector_v);
 
 	std::cout << "Running on "
 		<< Q.get_device().get_info<sycl::info::device::name>()

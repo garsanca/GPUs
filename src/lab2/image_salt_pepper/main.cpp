@@ -245,11 +245,11 @@ int main(int argc, char **argv) {
 	sycl::device dev;
 
 	if (argv[3][0]=='h')
-		dev = sycl::device(sycl::host_selector());
+		dev = sycl::device(sycl::cpu_selector_v);
 	else if (argv[3][0]=='c')
-		dev = sycl::device(sycl::cpu_selector());
+		dev = sycl::device(sycl::cpu_selector_v);
 	else if (argv[3][0]=='g')
-		dev = sycl::device(sycl::gpu_selector());
+		dev = sycl::device(sycl::gpu_selector_v);
 
 	sycl::queue Q(dev);
 	std::cout << "Running on "
