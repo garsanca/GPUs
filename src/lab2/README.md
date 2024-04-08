@@ -23,7 +23,7 @@
 * Únicamente hay que tener en cuenta 3 cuestiones:
      1. Está instalado en el sistema operativo **GNU-Linux**
      2. El entorno (compiladores, herramientas y librerías) se activan cargando el script **setvars.sh**: ```source /opt/intel/oneapi/setvars.sh```. Es importante hacerlo cada vez que se abra una consola o terminal
-     3. Para que el compilador **dpcpp** o **icx** habilite la lambdas con SYCL se suele compilar con el flags `-fsycl` y para poder usar las GPUs de NVIDIA se debería compilar con los flags `-fsycl -fsycl-targets=nvptx64-nvidia-cuda`. A modo de ejemplo indico la línea de compilación global para un archivo: ```icpx -fsycl -fsycl-targets=nvptx64-nvidia-cuda -o exec.cuda main.cpp```
+     3. Para que el compilador **dpcpp** o **icpx** habilite la lambdas con SYCL se suele compilar con el flags `-fsycl` y para poder usar las GPUs de NVIDIA se debería compilar con los flags `-fsycl -fsycl-targets=nvptx64-nvidia-cuda`. A modo de ejemplo indico la línea de compilación global para un archivo: ```icpx -fsycl -fsycl-targets=nvptx64-nvidia-cuda -o exec.cuda main.cpp```
 
 ```bash
 user@host:~/ $ source /opt/intel/oneapi/setvars.sh 
