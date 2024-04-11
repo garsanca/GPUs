@@ -1,5 +1,5 @@
 CXX = icpx
-COMPFLAGS = -fsycl -std=c++11 
+COMPFLAGS = -fsycl
 OPTFLAGS = -O2
 INCLUDES = 
 LIBS=-L/usr/lib/gcc/x86_64-linux-gnu/11
