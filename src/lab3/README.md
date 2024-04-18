@@ -18,7 +18,7 @@
 ## Transparencias
 * Todo el material está disponible en el repositorio [github](https://github.com/garsanca/GPUs/tree/main/src/lab3)
     * Puede descargarse fácilmente clonando el repositorio ejecutando en un terminal el comando ```git clone https://github.com/garsanca/GPUs```
-    * Añada a la variable de entorno PATH, la ruta del compilador de NVIDIA del [SDK-HPC](https://developer.nvidia.com/hpc-sdk): ```export PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/compilers/bin:$PATH``
+    * Añada a la variable de entorno PATH, la ruta del compilador de NVIDIA del [SDK-HPC](https://developer.nvidia.com/hpc-sdk): ```export PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/compilers/bin:$PATH```
 
 ## Laboratorios FDI
 * En los laboratorio está instalado el entorno de OpenACC soportado en NVIDIA en el [NVIDIA HPC SDK](https://developer.nvidia.com/hpc-sdk) para que pueda ser utilizado por los alumnos
