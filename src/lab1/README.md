@@ -309,34 +309,50 @@ __global__ void transpose_device(float *in, float *out, int rows, int cols)
 | 380MB/s |   859MB/s    | 1219 MB/s      |  2014 MB/s   | 
 
 ### Profiling
-* CUDA profiler: **nvprof**
+* CUDA profiler: **nsys nvprof**
 
 ```bash
-carlos@7picos: $ nvprof ./transpose
-./exec n (by default n=4096)
-Transpose version 1D: 381.636146 MB/s
-==29936== NVPROF is profiling process 29936, command: ./transpose
-Transpose kernel version: 4950.878007 MB/s
-==29936== Profiling application: ./transpose
-==29936== Profiling result:
-Time(%)      Time     Calls       Avg       Min       Max  Name
- 47.10%  10.468ms         1  10.468ms  10.468ms  10.468ms  [CUDA memcpy DtoH]
- 42.61%  9.4681ms         1  9.4681ms  9.4681ms  9.4681ms  [CUDA memcpy HtoD]
- 10.29%  2.2867ms         1  2.2867ms  2.2867ms  2.2867ms  transpose_device(float*, float*, int, int)
+carlos@7picos: $ nsys nvprof ./transpose
+WARNING: transpose and any of its children processes will be profiled.
 
-==29936== API calls:
-Time(%)      Time     Calls       Avg       Min       Max  Name
- 85.07%  130.76ms         2  65.381ms  360.05us  130.40ms  cudaMalloc
- 14.57%  22.390ms         2  11.195ms  9.5133ms  12.877ms  cudaMemcpy
-  0.24%  370.00us        91  4.0650us     122ns  193.84us  cuDeviceGetAttribute
-  0.07%  108.08us         1  108.08us  108.08us  108.08us  cuDeviceTotalMem
-  0.02%  33.740us         1  33.740us  33.740us  33.740us  cudaLaunch
-  0.02%  28.259us         1  28.259us  28.259us  28.259us  cuDeviceGetName
-  0.00%  5.4260us         1  5.4260us  5.4260us  5.4260us  cudaThreadSynchronize
-  0.00%  5.2270us         4  1.3060us     147ns  4.3870us  cudaSetupArgument
-  0.00%  1.9540us         1  1.9540us  1.9540us  1.9540us  cudaConfigureCall
-  0.00%  1.5640us         3     521ns     124ns  1.2540us  cuDeviceGetCount
-  0.00%     853ns         3     284ns     122ns     487ns  cuDeviceGet
+./exec n (by default n=8192)
+Transpose version 1D: 220.074017 MB/s
+Transpose kernel version: 2836.093724 MB/s tKernel=0.090265 (us)
+Generating '/tmp/nsys-report-07c3.qdstrm'
+[1/7] [========================100%] report1.nsys-rep
+[2/7] [========================100%] report1.sqlite
+[3/7] Executing 'nvtx_sum' stats report
+SKIPPED: /home/hlocal/Descargas/GPUs/src/lab1/matrix_transpose/CUDA.v1/report1.sqlite does not contain NV Tools Extension (NVTX) data.
+[4/7] Executing 'cuda_api_sum' stats report
+
+ Time (%)  Total Time (ns)  Num Calls    Avg (ns)      Med (ns)     Min (ns)    Max (ns)   StdDev (ns)            Name         
+ --------  ---------------  ---------  ------------  ------------  ----------  ----------  ------------  ----------------------
+     44,0       88.474.333          2  44.237.166,0  44.237.166,0      98.663  88.375.670  62.421.270,0  cudaMallocManaged     
+     25,0       51.094.980          1  51.094.980,0  51.094.980,0  51.094.980  51.094.980           0,0  cudaLaunchKernel      
+     19,0       39.159.834          1  39.159.834,0  39.159.834,0  39.159.834  39.159.834           0,0  cudaThreadSynchronize 
+      9,0       18.800.963          2   9.400.481,0   9.400.481,0   7.949.749  10.851.214   2.051.645,0  cudaFree              
+      0,0            1.226          1       1.226,0       1.226,0       1.226       1.226           0,0  cuModuleGetLoadingMode
+
+[5/7] Executing 'cuda_gpu_kern_sum' stats report
+
+ Time (%)  Total Time (ns)  Instances    Avg (ns)      Med (ns)     Min (ns)    Max (ns)   StdDev (ns)                      Name                    
+ --------  ---------------  ---------  ------------  ------------  ----------  ----------  -----------  --------------------------------------------
+    100,0       39.161.797          1  39.161.797,0  39.161.797,0  39.161.797  39.161.797          0,0  transpose_device(float *, float *, int, int)
+
+[6/7] Executing 'cuda_gpu_mem_time_sum' stats report
+
+ Time (%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)              Operation            
+ --------  ---------------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+     54,0       13.595.938  1.976   6.880,0   2.559,0     1.278    44.576     11.008,0  [CUDA Unified Memory memcpy HtoD]
+     45,0       11.525.425  1.536   7.503,0   2.335,0     1.119    40.000     11.114,0  [CUDA Unified Memory memcpy DtoH]
+
+[7/7] Executing 'cuda_gpu_mem_size_sum' stats report
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)              Operation            
+ ----------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+ 268,435     1.536  0,175     0,033     0,004     1,044     0,301        [CUDA Unified Memory memcpy DtoH]
+ 268,435     1.976  0,136     0,033     0,004     1,024     0,264        [CUDA Unified Memory memcpy HtoD]
+
 ```
 
 
