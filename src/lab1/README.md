@@ -356,25 +356,12 @@ SKIPPED: /home/hlocal/Descargas/GPUs/src/lab1/matrix_transpose/CUDA.v1/report1.s
 ```
 
 
-* CUDA profiler: **nvvp**
+* CUDA profiler: **ncu**
+    * Recolección de profiling con ```ncu -o profile --set full ./transpose``` y visualización de traza con ```ncu-ui report.nsys-rep```
     * Aplicación gráfica con mayor precisión
-* Para mayor detalle consultar la opción **Profile Nsight Compute**
 * Versión v1 de la transposición de matrices: *Achieved Occupancy 27,25%*
 
-
-![Imagen](figures/nvvp_utilization_v1.png)
-
-* **Profile in NVIDIA Nsight Compute**: versión v2 de la transposición de matrices: *Occupancy 59.31%*
-
-![Imagen](figures/CUDAv2.png)
-
-
-
 * Versión v2 de la transposición de matrices: **Accesos alineados/desalineados**
-
-![Imagen](figures/mem_transpose2.png)
-
-![Imagen](figures/mem_miscoalesced.png)
 
 * Versión v3 de la transposición de matrices: **shared-memory**
     * Más rápida en comparación con la memoria global
