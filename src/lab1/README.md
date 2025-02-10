@@ -35,8 +35,8 @@
 
 # CUDA 
 ## Entorno desarrollo
-* Instalado CUDA 11.7
-    * Ubuntu 22.04 por defecto instalado gcc-10
+* Instalado CUDA 12
+    * Ubuntu 24.04 por defecto instalado gcc-13.2
 
 ## Compiladores
 * *nvcc* para compilar los ficheros fuente .cu (kernels)
@@ -63,15 +63,15 @@ Fri Feb 17 16:02:47 2023
 
 ### nvcc
 ``` bash
-usuario_local@profess11:~$ nvcc -V
+usuario_local@profess11:~$ /opt/nvidia/hpc_sdk/Linux_x86_64/2024/compilers/bin/nvcc  -V
 nvcc: NVIDIA (R) Cuda compiler driver
-Copyright (c) 2005-2020 NVIDIA Corporation
-Built on Wed_Jul_22_19:09:09_PDT_2020
-Cuda compilation tools, release 11.0, V11.0.221
-Build cuda_11.0_bu.TC445_37.28845127_0
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Thu_Mar_28_02:18:24_PDT_2024
+Cuda compilation tools, release 12.4, V12.4.131
+Build cuda_12.4.r12.4/compiler.34097967_0
 ```
 
-* Procesador Intel i7-8700 con 6 cores + SMT
+* Procesador Intel i7-12700 con 12+8+4 cores
 
 ### cpu_info
 ``` bash
