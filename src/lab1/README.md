@@ -621,24 +621,25 @@ Program received signal CUDA_EXCEPTION_10, Device Illegal Address.
 
 ### Reducción de ruido (convolución 2D)
 
-$Out(i,j) = \frac{1}{159} \begin{bmatrix}
+$$Out(i,j) = \frac{1}{159} \begin{bmatrix}
 2 &  4 &  5 &  4 & 2 \\ 
 4 &  9 & 12 &  9 & 4 \\ 
 5 & 12 & 15 & 12 & 5 \\ 
 4 &  9 & 12 &  9 & 4 \\ 
 2 &  4 &  5 &  4 & 2
-\end{bmatrix} In(i-2:i+2,j-2:j+2)$
+\end{bmatrix} In(i-2:i+2,j-2:j+2)$$
 
 ![Imagen](figures/convolution3x3.png)
 
 ### Gradiente de la imagen
-* $Gx(i,j) = \begin{bmatrix}
+
+$$Gx(i,j) = \begin{bmatrix}
 1 &  2 & 0 &  -2 & -1 \\ 
 4 &  8 & 0 &  -8 & -4 \\ 
 6 & 12 & 0 & -12 & -6 \\ 
 4 &  8 & 0 &  -8 & -4 \\ 
 1 &  2 & 0 &  -2 & -1 \\ 
-\end{bmatrix} NR(i-2:i+2,j-2:j+2)$
+\end{bmatrix} NR(i-2:i+2,j-2:j+2)$$
 
 * $G = \sqrt{{G_x}^2+{G_y}^2}$
 * $\phi = \arctan2({G_x}^{2},{G_y}^{2})$
