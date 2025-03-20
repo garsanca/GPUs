@@ -357,6 +357,9 @@ free(c, Q);
 | Gen 9              | 7         |  8         | 168     | 1344(SIMDx8)|
 | Iris Xe Gen11      | 7         |  8         | 448     | 3584(SIMDx8)| 
 | Iris Xe-LP (Gen12) | 7         | 16         | 672     | 5376(SIMDx8)|
+| UHD 770 (Gen 13)   | 7         | 16         | 224     | 1792(SIMDx8)|
+
+
 
 ![Imagen](figures/intelGPU_arch.png)
 
@@ -442,15 +445,15 @@ free(c, Q);
 * Se puede verificar con el ejemplo **vector_add.cpp** estos aspectos.
 
 ```bash
-user@host:~/ $ ./exec 51200000
-Running on Intel(R) UHD Graphics 620 [0x5917]
-Time VectorAdd1=7061962127 usecs
-Time VectorAdd2=8620146940 usecs (num work_groups=1)
-Time VectorAdd2=4394150106 usecs (num work_groups=2)
-Time VectorAdd2=2514177313 usecs (num work_groups=4)
-Time VectorAdd2=2736493505 usecs (num work_groups=8)
-Time VectorAdd2=2951150889 usecs (num work_groups=16)
-Time VectorAdd2=2908992654 usecs (num work_groups=32)
+user@host:~/ $ ./exec 5120000
+Running on Intel(R) Graphics
+Time VectorAdd1=376838012 usecs
+Time VectorAdd2=1450740247 usecs (num work_groups=1)
+Time VectorAdd2=733601794 usecs (num work_groups=2)
+Time VectorAdd2=345888879 usecs (num work_groups=4)
+Time VectorAdd2=191530029 usecs (num work_groups=8)
+Time VectorAdd2=175651708 usecs (num work_groups=16)
+Time VectorAdd2=180759193 usecs (num work_groups=32)
 ```
 
 ### Evaluación mediante profiling con VTune

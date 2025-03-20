@@ -5,7 +5,7 @@ CC=gcc
 
 CFLAGS=-O3 -lm -lrt -std=c99
 
-PGCC=pgcc -Minfo -fast -acc -ta=nvidia
+PGCC=nvc -Minfo -fast -acc -ta=nvidia
 
 NAME=hello
 
