@@ -5,7 +5,7 @@ CC=gcc
 
 CFLAGS=-O3 -lm -lrt -std=c99
 
-PGCC=nvc -Minfo -fast -acc -ta=nvidia
+PGCC=nvc -fast -acc -gpu=managed -Minfo=accel
 
 NAME=hello
 
